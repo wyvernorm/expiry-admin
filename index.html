@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Expiry Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <h1>⏰ Expiry Admin</h1>
+
+  <div class="card">
+  <div class="customer-box">
+  <label>👤 ลูกค้า</label>
+
+  <input
+    id="customerSearch"
+    placeholder="ค้นหาลูกค้า..."
+    class="search"
+  />
+
+  <div id="customerSelected" class="selected"></div>
+
+  <div id="customerDropdown" class="dropdown hidden"></div>
+
+  <button id="refreshCustomer" class="refresh">
+    🔄 รีเฟรชข้อมูลลูกค้า
+  </button>
+</div>
+
+  <!-- 👇 เพิ่มตรงนี้เลย ใต้ dropdown -->
+  <div id="customerPreview"
+       style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+    
+    <img id="customerAvatar"
+         width="40"
+         height="40"
+         style="border-radius:50%; display:none;" />
+
+    <span id="customerName" style="font-weight:600;"></span>
+  </div>
+</div>
+
+
+  <div class="card">
+    <h3>➕ เพิ่มบริการ</h3>
+
+    <label>ชื่อบริการ</label>
+    <input id="serviceName" placeholder="เช่น โฮสติ้ง / ระบบ VIP">
+
+    <label>วันหมดอายุ</label>
+    <input id="expireDate" type="date">
+
+    <label>แจ้งล่วงหน้า (วัน)</label>
+    <input id="notifyBefore" type="number" value="1">
+
+    <label>ข้อความแจ้งเตือน</label>
+    <textarea id="message" rows="3"
+      placeholder="⏰ บริการของคุณกำลังจะหมดอายุ"></textarea>
+
+    <button class="primary" onclick="addService()">บันทึกบริการ</button>
+  </div>
+
+  <div class="card">
+    <h3>📋 บริการทั้งหมด</h3>
+    <ul id="serviceList" class="list"></ul>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
