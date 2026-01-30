@@ -11,7 +11,6 @@ let allCustomers = [];
 // ==================== GOOGLE AUTH ====================
 
 function initGoogleAuth() {
-    // Load Google Identity Services
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -20,11 +19,10 @@ function initGoogleAuth() {
 
     script.onload = () => {
         google.accounts.id.initialize({
-            client_id: '962763961858-59vepdnpla1p46dsrh4hecpr0np57flu.apps.googleusercontent.com', // ต้องเปลี่ยนเป็น Client ID จริง
+            client_id: '962763961858-59vepdnpla1p46dsrh4hecpr0np57flu.apps.googleusercontent.com',
             callback: handleGoogleLogin
         });
 
-        // Check if already logged in
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
@@ -73,14 +71,12 @@ function parseJwt(token) {
 function showApp() {
     document.getElementById('loginOverlay').classList.remove('active');
     
-    // Show user profile
     const profile = document.getElementById('userProfile');
     profile.style.display = 'flex';
     document.getElementById('userAvatar').src = currentUser.picture;
     document.getElementById('userName').textContent = currentUser.name;
     document.getElementById('userEmail').textContent = currentUser.email;
     
-    // Logout handler
     document.getElementById('logoutBtn').addEventListener('click', logout);
 }
 
@@ -90,7 +86,7 @@ function logout() {
     location.reload();
 }
 
-// ==================== UTILITY FUNCTIONS ====================
+// ==================== UTILITY ====================
 
 function showLoading() {
     document.getElementById('loadingOverlay').classList.add('active');
@@ -152,7 +148,6 @@ class ExpiryManager {
     }
 
     setupEventListeners() {
-        // View Toggle
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -163,7 +158,6 @@ class ExpiryManager {
             });
         });
 
-        // Calendar Navigation
         document.getElementById('prevMonth').addEventListener('click', () => {
             this.currentMonth--;
             if (this.currentMonth < 0) {
@@ -182,7 +176,6 @@ class ExpiryManager {
             this.renderCalendar();
         });
 
-        // Today Button
         document.getElementById('todayBtn').addEventListener('click', () => {
             const today = new Date();
             this.currentMonth = today.getMonth();
@@ -191,26 +184,22 @@ class ExpiryManager {
             showToast('กลับสู่วันนี้', 'success');
         });
 
-        // Bulk Delete
         document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
             if (selectedItems.size === 0) return;
             const confirmed = await showConfirm('ลบรายการที่เลือก', `ต้องการลบ ${selectedItems.size} รายการหรือไม่?`);
             if (confirmed) await this.bulkDelete(Array.from(selectedItems));
         });
 
-        // Modal
         document.getElementById('addItemBtn').addEventListener('click', () => this.openModal());
         document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
         document.getElementById('closeDayModal').addEventListener('click', () => document.getElementById('dayModal').classList.remove('active'));
         document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
 
-        // Form
         document.getElementById('itemForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveService();
         });
 
-        // LINE User Select - Show Preview
         document.getElementById('lineUserId').addEventListener('change', (e) => {
             const userId = e.target.value;
             const preview = document.getElementById('selectedUserPreview');
@@ -232,17 +221,7 @@ class ExpiryManager {
             }
         });
 
-        // Filters
         document.getElementById('filterStatus').addEventListener('change', () => this.renderList());
-        document.getElementById('searchInput').addEventListener('input', () => this.renderList());
-
-        // Customer
-        document.getElementById('customerSearch').addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            document.querySelectorAll('.customer-item').forEach(el => {
-                el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-            });
-        });
 
         document.getElementById('customerSelected').addEventListener('click', () => {
             document.getElementById('customerDropdown').classList.toggle('hidden');
@@ -261,7 +240,6 @@ class ExpiryManager {
             showToast('รีเฟรชสำเร็จ', 'success');
         });
 
-        // Close on background
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') this.closeModal();
         });
@@ -328,15 +306,10 @@ class ExpiryManager {
         document.getElementById('dayModal').classList.remove('active');
         editingServiceId = service ? service.id : null;
 
-        if (!currentCustomerId) {
-            showToast('กรุณาเลือกลูกค้าก่อน', 'warning');
-            return;
-        }
-
         const modal = document.getElementById('modal');
         const form = document.getElementById('itemForm');
 
-        // Populate LINE user selector
+        // Populate LINE user selector with ALL customers
         this.populateLineUserSelect();
 
         if (service) {
@@ -351,11 +324,6 @@ class ExpiryManager {
             document.getElementById('modalTitle').textContent = 'เพิ่มบริการใหม่';
             form.reset();
             document.getElementById('expireDate').value = date || new Date().toISOString().split('T')[0];
-            // Set default to current customer
-            if (currentCustomer) {
-                document.getElementById('lineUserId').value = currentCustomer.line_user_id;
-                document.getElementById('lineUserId').dispatchEvent(new Event('change'));
-            }
         }
 
         modal.classList.add('active');
@@ -366,6 +334,7 @@ class ExpiryManager {
         const select = document.getElementById('lineUserId');
         select.innerHTML = '<option value="">-- เลือกผู้รับแจ้งเตือน --</option>';
         
+        // แสดงทุกคน ไม่จำกัดเฉพาะลูกค้าปัจจุบัน
         allCustomers.forEach(c => {
             const option = document.createElement('option');
             option.value = c.line_user_id;
@@ -382,11 +351,6 @@ class ExpiryManager {
     }
 
     async saveService() {
-        if (!currentCustomerId) {
-            showToast('กรุณาเลือกลูกค้าก่อน', 'warning');
-            return;
-        }
-
         const lineUserId = document.getElementById('lineUserId').value;
         if (!lineUserId) {
             showToast('กรุณาเลือกผู้รับแจ้งเตือน', 'warning');
@@ -400,7 +364,6 @@ class ExpiryManager {
         const additionalMessage = document.getElementById('message').value;
         const fullMessage = additionalMessage ? `${serviceName}\n${additionalMessage}` : serviceName;
 
-        // Find customer by line_user_id
         const targetCustomer = allCustomers.find(c => c.line_user_id === lineUserId);
 
         const body = {
@@ -677,22 +640,13 @@ class ExpiryManager {
 
     renderList() {
         const statusFilter = document.getElementById('filterStatus').value;
-        const searchQuery = document.getElementById('searchInput').value.toLowerCase();
 
         let filtered = this.services.filter(s => {
             const status = this.getServiceStatus(s.expire_date, 7);
-            const matchStatus = statusFilter === 'all' || status === statusFilter;
-            const matchSearch = (s.service_name && s.service_name.toLowerCase().includes(searchQuery)) ||
-                              (s.message && s.message.toLowerCase().includes(searchQuery));
-            return matchStatus && matchSearch;
+            return statusFilter === 'all' || status === statusFilter;
         });
 
-        // เรียงตามวันหมดอายุ (ใกล้ที่สุดขึ้นบน)
-        filtered.sort((a, b) => {
-            const dateA = new Date(a.expire_date);
-            const dateB = new Date(b.expire_date);
-            return dateA - dateB;
-        });
+        filtered.sort((a, b) => new Date(a.expire_date) - new Date(b.expire_date));
 
         const list = document.getElementById('itemsList');
         
