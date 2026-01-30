@@ -414,9 +414,9 @@ body::before {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem;
+    gap: 0.25rem;
     background: var(--bg-card);
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
@@ -426,18 +426,18 @@ body::before {
     text-align: center;
     font-weight: 600;
     color: var(--accent-primary);
-    padding: 0.5rem 0;
-    font-size: 0.9rem;
+    padding: 0.5rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
 
 .calendar-day {
-    min-height: 80px;
+    aspect-ratio: 1;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    padding: 0.4rem;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
@@ -566,21 +566,22 @@ body::before {
 }
 
 .day-number {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
     font-family: 'Space Mono', monospace;
 }
 
 .day-items {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.15rem;
+    flex: 1;
 }
 
 .item-dot {
     width: 100%;
-    height: 4px;
+    height: 3px;
     border-radius: 2px;
     background: var(--accent-primary);
     animation: slideIn 0.3s ease;

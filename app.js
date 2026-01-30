@@ -140,14 +140,19 @@ class ExpiryManager {
             title.textContent = 'แก้ไขบริการ';
             document.getElementById('serviceName').value = service.service_name;
             document.getElementById('expireDate').value = service.expire_date;
-            document.getElementById('notifyBefore').value = service.notify_before;
             document.getElementById('message').value = service.message || '';
         } else {
             title.textContent = 'เพิ่มบริการใหม่';
             form.reset();
-            document.getElementById('notifyBefore').value = 7;
+            
+            // ตั้งค่าวันที่อัตโนมัติ
             if (date) {
                 document.getElementById('expireDate').value = date;
+            } else {
+                // ตั้งค่าเป็นวันนี้
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                document.getElementById('expireDate').value = dateStr;
             }
         }
 
@@ -168,12 +173,20 @@ class ExpiryManager {
             return;
         }
 
+        const serviceName = document.getElementById('serviceName').value;
+        const expireDate = document.getElementById('expireDate').value;
+        const additionalMessage = document.getElementById('message').value;
+        
+        // รวมชื่อบริการกับข้อความ
+        const fullMessage = additionalMessage 
+            ? `${serviceName}\n${additionalMessage}`
+            : serviceName;
+
         const body = {
             customer_id: currentCustomerId,
-            service_name: document.getElementById('serviceName').value,
-            expire_date: document.getElementById('expireDate').value,
-            notify_before: document.getElementById('notifyBefore').value,
-            message: document.getElementById('message').value
+            service_name: serviceName,
+            expire_date: expireDate,
+            message: fullMessage
         };
 
         const url = editingServiceId
@@ -317,6 +330,9 @@ class ExpiryManager {
         const thaiDate = this.formatThaiDate(date);
         title.textContent = thaiDate;
         
+        // เรียงให้รายการใหม่ล่าสุดขึ้นบนสุด
+        const sortedServices = [...services].sort((a, b) => b.id - a.id);
+        
         list.innerHTML = `
             <button class="btn-primary" style="width: 100%; margin-bottom: 1rem;" onclick="manager.openModal(null, '${date}')">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -324,17 +340,16 @@ class ExpiryManager {
                 </svg>
                 เพิ่มบริการในวันนี้
             </button>
-        ` + services.map(s => {
-            const status = this.getServiceStatus(s.expire_date, s.notify_before);
+        ` + sortedServices.map(s => {
+            const status = this.getServiceStatus(s.expire_date, 7);
             return `
                 <div class="day-item ${status}">
                     <div class="day-item-name">${s.service_name}</div>
                     <div class="day-item-details">
-                        แจ้งเตือนล่วงหน้า: ${s.notify_before} วัน<br>
                         สถานะ: ${status === 'expired' ? 'หมดอายุแล้ว' : 
                                 status === 'soon' ? 'ใกล้หมดอายุ' : 'ปกติ'}
                     </div>
-                    ${s.message ? `<div class="item-note" style="margin-top: 0.5rem; font-size: 0.9rem;">📝 ${s.message}</div>` : ''}
+                    ${s.message && s.message !== s.service_name ? `<div class="item-note" style="margin-top: 0.5rem; font-size: 0.9rem;">📝 ${s.message}</div>` : ''}
                     <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
                         <button class="icon-btn" onclick="manager.openModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -369,16 +384,23 @@ class ExpiryManager {
         const searchQuery = document.getElementById('searchInput').value.toLowerCase();
 
         let filteredServices = this.services.filter(s => {
-            const status = this.getServiceStatus(s.expire_date, s.notify_before);
+            const status = this.getServiceStatus(s.expire_date, 7);
             const matchStatus = statusFilter === 'all' || status === statusFilter;
-            const matchSearch = s.service_name.toLowerCase().includes(searchQuery) ||
+            const matchSearch = (s.service_name && s.service_name.toLowerCase().includes(searchQuery)) ||
                               (s.message && s.message.toLowerCase().includes(searchQuery));
 
             return matchStatus && matchSearch;
         });
 
-        // Sort by expire date
-        filteredServices.sort((a, b) => new Date(a.expire_date) - new Date(b.expire_date));
+        // เรียงตามวันหมดอายุ (ใกล้ที่สุดขึ้นบน) และ ID ใหม่ล่าสุดขึ้นบน
+        filteredServices.sort((a, b) => {
+            const dateA = new Date(a.expire_date);
+            const dateB = new Date(b.expire_date);
+            if (dateA.getTime() === dateB.getTime()) {
+                return b.id - a.id; // ถ้าวันเดียวกัน ให้ ID ใหม่ขึ้นบน
+            }
+            return dateA - dateB;
+        });
 
         const list = document.getElementById('itemsList');
         
@@ -395,7 +417,7 @@ class ExpiryManager {
         }
 
         list.innerHTML = filteredServices.map(s => {
-            const status = this.getServiceStatus(s.expire_date, s.notify_before);
+            const status = this.getServiceStatus(s.expire_date, 7);
             const expireDate = new Date(s.expire_date);
             const today = new Date();
             const diffTime = expireDate - today;
@@ -414,7 +436,7 @@ class ExpiryManager {
                 <div class="item-card ${status}">
                     <div class="item-header">
                         <div class="item-info">
-                            <div class="item-name">${s.service_name}</div>
+                            <div class="item-name">${s.service_name || 'ไม่มีชื่อ'}</div>
                         </div>
                         <div class="item-actions">
                             <button class="icon-btn" onclick="manager.openModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
@@ -444,12 +466,8 @@ class ExpiryManager {
                             <div class="detail-label">เหลือเวลา</div>
                             <div class="detail-value ${status}">${statusText}</div>
                         </div>
-                        <div class="detail-item">
-                            <div class="detail-label">แจ้งล่วงหน้า</div>
-                            <div class="detail-value">${s.notify_before} วัน</div>
-                        </div>
                     </div>
-                    ${s.message ? `<div class="item-note">📝 ${s.message}</div>` : ''}
+                    ${s.message && s.message !== s.service_name ? `<div class="item-note">📝 ${s.message}</div>` : ''}
                 </div>
             `;
         }).join('');

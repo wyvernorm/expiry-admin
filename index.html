@@ -143,7 +143,7 @@
             </div>
             <form id="itemForm" class="item-form">
                 <div class="form-group">
-                    <label for="serviceName">ชื่อบริการ</label>
+                    <label for="serviceName">ชื่อบริการ (หัวข้อ)</label>
                     <input type="text" id="serviceName" required placeholder="เช่น โฮสติ้ง / ระบบ VIP">
                 </div>
                 <div class="form-group">
@@ -151,12 +151,8 @@
                     <input type="date" id="expireDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="notifyBefore">แจ้งล่วงหน้า (วัน)</label>
-                    <input type="number" id="notifyBefore" min="1" value="7">
-                </div>
-                <div class="form-group">
                     <label for="message">ข้อความแจ้งเตือน</label>
-                    <textarea id="message" rows="3" placeholder="⏰ บริการของคุณกำลังจะหมดอายุ"></textarea>
+                    <textarea id="message" rows="3" placeholder="รายละเอียดเพิ่มเติมสำหรับการแจ้งเตือน"></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="cancelBtn">ยกเลิก</button>
