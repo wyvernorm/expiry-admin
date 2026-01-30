@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expiry Admin - ระบบจัดการวันหมดอายุ</title>
+    <title>Expiry Admin</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -33,11 +33,26 @@
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
                         </svg>
-                        เพิ่มรายการ
+                        เพิ่มบริการ
                     </button>
                 </div>
             </div>
         </header>
+
+        <!-- Customer Selector -->
+        <div class="customer-selector">
+            <div class="customer-search-box">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                </svg>
+                <input type="text" id="customerSearch" placeholder="ค้นหาลูกค้า...">
+            </div>
+            <div id="customerSelected" class="customer-selected"></div>
+            <div id="customerDropdown" class="customer-dropdown hidden"></div>
+            <button id="refreshCustomer" class="btn-refresh">
+                🔄 รีเฟรชข้อมูล
+            </button>
+        </div>
 
         <main class="main">
             <!-- Calendar View -->
@@ -78,7 +93,7 @@
                     <div class="stat-card warning">
                         <div class="stat-icon">🔔</div>
                         <div class="stat-content">
-                            <div class="stat-label">ใกล้หมดอายุ (7 วัน)</div>
+                            <div class="stat-label">ใกล้หมดอายุ</div>
                             <div class="stat-value" id="soonCount">0</div>
                         </div>
                     </div>
@@ -119,7 +134,7 @@
     <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">เพิ่มรายการใหม่</h2>
+                <h2 id="modalTitle">เพิ่มบริการใหม่</h2>
                 <button class="close-btn" id="closeModal">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -128,23 +143,20 @@
             </div>
             <form id="itemForm" class="item-form">
                 <div class="form-group">
-                    <label for="lineUser">ลูกค้า</label>
-                    <div class="line-user-selector" id="lineUserSelector">
-                        <div class="loading-users">กำลังโหลดรายชื่อลูกค้า...</div>
-                    </div>
-                    <input type="hidden" id="selectedUserId" required>
+                    <label for="serviceName">ชื่อบริการ</label>
+                    <input type="text" id="serviceName" required placeholder="เช่น โฮสติ้ง / ระบบ VIP">
                 </div>
                 <div class="form-group">
-                    <label for="itemName">รหัสลูกค้า</label>
-                    <input type="text" id="itemName" required placeholder="กรอกรหัสลูกค้า">
+                    <label for="expireDate">วันหมดอายุ</label>
+                    <input type="date" id="expireDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="itemExpiry">วันที่นัดหมาย</label>
-                    <input type="date" id="itemExpiry" required>
+                    <label for="notifyBefore">แจ้งล่วงหน้า (วัน)</label>
+                    <input type="number" id="notifyBefore" min="1" value="7">
                 </div>
                 <div class="form-group">
-                    <label for="itemNote">รายละเอียด</label>
-                    <textarea id="itemNote" rows="3" placeholder="รายละเอียดสำหรับแจ้งเตือน"></textarea>
+                    <label for="message">ข้อความแจ้งเตือน</label>
+                    <textarea id="message" rows="3" placeholder="⏰ บริการของคุณกำลังจะหมดอายุ"></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="cancelBtn">ยกเลิก</button>
