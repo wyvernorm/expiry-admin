@@ -123,6 +123,9 @@ class ExpiryManager {
     }
 
     openModal(service = null, date = null) {
+        // ปิด dayModal ถ้ามีเปิดอยู่
+        document.getElementById('dayModal').classList.remove('active');
+        
         this.editingService = service;
         this.selectedDate = date;
         editingServiceId = service ? service.id : null;
@@ -140,7 +143,14 @@ class ExpiryManager {
             title.textContent = 'แก้ไขบริการ';
             document.getElementById('serviceName').value = service.service_name;
             document.getElementById('expireDate').value = service.expire_date;
-            document.getElementById('message').value = service.message || '';
+            
+            // แยกข้อความออกจากชื่อบริการ
+            const messageParts = service.message ? service.message.split('\n') : [];
+            if (messageParts.length > 1) {
+                document.getElementById('message').value = messageParts.slice(1).join('\n');
+            } else {
+                document.getElementById('message').value = '';
+            }
         } else {
             title.textContent = 'เพิ่มบริการใหม่';
             form.reset();
@@ -282,6 +292,7 @@ class ExpiryManager {
         
         if (otherMonth) {
             dayDiv.classList.add('other-month');
+            dayDiv.style.opacity = '0.5';
         }
 
         // Check if today
@@ -290,32 +301,46 @@ class ExpiryManager {
             month === today.getMonth() && 
             year === today.getFullYear()) {
             dayDiv.classList.add('today');
+            dayDiv.style.backgroundColor = 'rgba(0, 217, 255, 0.1)';
         }
 
         // Get services for this day
         const dayServices = this.services.filter(s => s.expire_date === dateStr);
         
-        if (dayServices.length > 0) {
-            dayDiv.classList.add('has-items');
-        }
+        // สร้าง HTML แบบ Google Calendar
+        const eventsHtml = dayServices.slice(0, 3).map(s => {
+            const status = this.getServiceStatus(s.expire_date, 7);
+            const serviceName = s.service_name || 'ไม่มีชื่อ';
+            return `<div class="event-item ${status}" title="${serviceName}">${serviceName}</div>`;
+        }).join('');
+
+        const moreCount = dayServices.length - 3;
+        const moreHtml = moreCount > 0 ? `<div class="more-events">+${moreCount} เพิ่มเติม</div>` : '';
 
         dayDiv.innerHTML = `
             <div class="day-number">${day}</div>
-            <div class="day-items">
-                ${dayServices.slice(0, 3).map(s => {
-                    const status = this.getServiceStatus(s.expire_date, s.notify_before);
-                    return `<div class="item-dot ${status}"></div>`;
-                }).join('')}
-                ${dayServices.length > 3 ? `<div class="item-dot">+${dayServices.length - 3}</div>` : ''}
+            <div class="day-events">
+                ${eventsHtml}
+                ${moreHtml}
             </div>
         `;
 
-        // Click to add or view services
-        dayDiv.addEventListener('click', () => {
-            if (dayServices.length > 0) {
-                this.showDayDetails(dateStr, dayServices);
-            } else if (!otherMonth) {
-                this.openModal(null, dateStr);
+        // Click handler
+        dayDiv.addEventListener('click', (e) => {
+            // ถ้าคลิกที่ event item หรือ more ให้เปิด modal รายละเอียด
+            if (e.target.classList.contains('event-item') || e.target.classList.contains('more-events')) {
+                if (dayServices.length > 0) {
+                    this.showDayDetails(dateStr, dayServices);
+                }
+            } else {
+                // ถ้าคลิกที่พื้นที่ว่างให้เปิด modal เพิ่มใหม่
+                if (!otherMonth) {
+                    if (dayServices.length > 0) {
+                        this.showDayDetails(dateStr, dayServices);
+                    } else {
+                        this.openModal(null, dateStr);
+                    }
+                }
             }
         });
 

@@ -414,42 +414,49 @@ body::before {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0.25rem;
+    grid-template-rows: auto;
     background: var(--bg-card);
-    padding: 1rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     margin-bottom: 2rem;
+    overflow: hidden;
 }
 
 .day-header {
     text-align: center;
     font-weight: 600;
     color: var(--accent-primary);
-    padding: 0.5rem;
+    padding: 0.75rem;
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-days-grid {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
 }
 
 .calendar-day {
-    aspect-ratio: 1;
+    min-height: 120px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 0.4rem;
+    padding: 0.5rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
 .calendar-day:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 217, 255, 0.2);
-    border-color: var(--accent-primary);
+    background: var(--bg-hover);
+    z-index: 1;
 }
 
 .calendar-day.other-month {
@@ -568,48 +575,59 @@ body::before {
 .day-number {
     font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
     font-family: 'Space Mono', monospace;
+    text-align: right;
 }
 
-.day-items {
+.day-events {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.25rem;
     flex: 1;
 }
 
-.item-dot {
-    width: 100%;
-    height: 3px;
-    border-radius: 2px;
+.event-item {
     background: var(--accent-primary);
-    animation: slideIn 0.3s ease;
+    color: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(-10px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.event-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 217, 255, 0.3);
 }
 
-.item-dot.expired {
+.event-item.expired {
     background: var(--accent-secondary);
-    box-shadow: 0 0 8px var(--accent-secondary);
 }
 
-.item-dot.soon {
+.event-item.soon {
     background: var(--accent-warning);
-    box-shadow: 0 0 8px var(--accent-warning);
 }
 
-.item-dot.active {
+.event-item.active {
     background: var(--accent-success);
+}
+
+.more-events {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 0.25rem;
+    cursor: pointer;
+}
+
+.more-events:hover {
+    color: var(--accent-primary);
 }
 
 /* Stats Panel */
