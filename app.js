@@ -20,7 +20,7 @@ function initGoogleAuth() {
 
     script.onload = () => {
         google.accounts.id.initialize({
-            client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // ต้องเปลี่ยนเป็น Client ID จริง
+            client_id: '962763961858-59vepdnpla1p46dsrh4hecpr0np57flu.apps.googleusercontent.com', // ต้องเปลี่ยนเป็น Client ID จริง
             callback: handleGoogleLogin
         });
 
