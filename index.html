@@ -3,10 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expiry Admin</title>
+    <meta name="theme-color" content="#0a0e1a">
+    <title>Expiry Admin - ระบบจัดการวันหมดอายุ</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader"></div>
+        <p>กำลังโหลด...</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
     <div class="container">
         <header class="header">
             <div class="header-content">
@@ -16,20 +27,25 @@
                 </h1>
                 <div class="header-actions">
                     <div class="view-toggle">
-                        <button class="toggle-btn active" data-view="calendar">
+                        <button class="toggle-btn active" data-view="calendar" title="ปฏิทิน (C)">
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
                             </svg>
                             ปฏิทิน
                         </button>
-                        <button class="toggle-btn" data-view="list">
+                        <button class="toggle-btn" data-view="list" title="รายการ (L)">
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
                             </svg>
                             รายการ
                         </button>
                     </div>
-                    <button class="btn-primary" id="addItemBtn">
+                    <button class="btn-icon" id="exportBtn" title="Export (E)">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-primary" id="addItemBtn" title="เพิ่มบริการ (N)">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
                         </svg>
@@ -47,7 +63,9 @@
                 </svg>
                 <input type="text" id="customerSearch" placeholder="ค้นหาลูกค้า...">
             </div>
-            <div id="customerSelected" class="customer-selected"></div>
+            <div id="customerSelected" class="customer-selected">
+                <div class="empty-state-small">กรุณาเลือกลูกค้า</div>
+            </div>
             <div id="customerDropdown" class="customer-dropdown hidden"></div>
             <button id="refreshCustomer" class="btn-refresh">
                 🔄 รีเฟรชข้อมูล
@@ -58,13 +76,16 @@
             <!-- Calendar View -->
             <div id="calendarView" class="view active">
                 <div class="calendar-header">
-                    <button class="nav-btn" id="prevMonth">
+                    <button class="nav-btn" id="prevMonth" title="เดือนก่อน (←)">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
                         </svg>
                     </button>
-                    <h2 class="current-month" id="currentMonth"></h2>
-                    <button class="nav-btn" id="nextMonth">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <h2 class="current-month" id="currentMonth"></h2>
+                        <button class="btn-today" id="todayBtn" title="วันนี้ (T)">วันนี้</button>
+                    </div>
+                    <button class="nav-btn" id="nextMonth" title="เดือนถัดไป (→)">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                         </svg>
@@ -93,7 +114,7 @@
                     <div class="stat-card warning">
                         <div class="stat-icon">🔔</div>
                         <div class="stat-content">
-                            <div class="stat-label">ใกล้หมดอายุ</div>
+                            <div class="stat-label">ใกล้หมดอายุ (7 วัน)</div>
                             <div class="stat-value" id="soonCount">0</div>
                         </div>
                     </div>
@@ -102,6 +123,13 @@
                         <div class="stat-content">
                             <div class="stat-label">ปกติ</div>
                             <div class="stat-value" id="activeCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">ทั้งหมด</div>
+                            <div class="stat-value" id="totalCount">0</div>
                         </div>
                     </div>
                 </div>
@@ -117,6 +145,12 @@
                             <option value="soon">ใกล้หมดอายุ</option>
                             <option value="active">ปกติ</option>
                         </select>
+                        <button class="btn-icon" id="bulkDeleteBtn" title="ลบหลายรายการ" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9z"/>
+                            </svg>
+                            ลบที่เลือก
+                        </button>
                     </div>
                     <div class="search-box">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -125,12 +159,20 @@
                         <input type="text" id="searchInput" placeholder="ค้นหา...">
                     </div>
                 </div>
-                <div class="items-list" id="itemsList"></div>
+                <div class="items-list" id="itemsList">
+                    <div class="empty-state">
+                        <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                        </svg>
+                        <h3>ยังไม่มีบริการ</h3>
+                        <p>เพิ่มบริการใหม่เพื่อเริ่มต้นใช้งาน</p>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Modal -->
+    <!-- Modal Add/Edit -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -143,20 +185,20 @@
             </div>
             <form id="itemForm" class="item-form">
                 <div class="form-group">
-                    <label for="serviceName">ชื่อบริการ (หัวข้อ)</label>
-                    <input type="text" id="serviceName" required placeholder="เช่น โฮสติ้ง / ระบบ VIP">
+                    <label for="serviceName">ชื่อบริการ (หัวข้อ) *</label>
+                    <input type="text" id="serviceName" required placeholder="เช่น โฮสติ้ง / ระบบ VIP" autofocus>
                 </div>
                 <div class="form-group">
-                    <label for="expireDate">วันหมดอายุ</label>
+                    <label for="expireDate">วันหมดอายุ *</label>
                     <input type="date" id="expireDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="message">ข้อความแจ้งเตือน</label>
-                    <textarea id="message" rows="3" placeholder="รายละเอียดเพิ่มเติมสำหรับการแจ้งเตือน"></textarea>
+                    <label for="message">รายละเอียด (สำหรับแจ้งเตือน)</label>
+                    <textarea id="message" rows="3" placeholder="ข้อความเพิ่มเติมที่จะส่งไปยัง LINE"></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancelBtn">ยกเลิก</button>
-                    <button type="submit" class="btn-primary">บันทึก</button>
+                    <button type="button" class="btn-secondary" id="cancelBtn">ยกเลิก (Esc)</button>
+                    <button type="submit" class="btn-primary">บันทึก (Ctrl+S)</button>
                 </div>
             </form>
         </div>
@@ -174,6 +216,19 @@
                 </button>
             </div>
             <div id="dayItemsList" class="day-items-list"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div id="confirmDialog" class="modal">
+        <div class="modal-content confirm-dialog">
+            <div class="confirm-icon">⚠️</div>
+            <h2 id="confirmTitle">ยืนยันการดำเนินการ</h2>
+            <p id="confirmMessage">คุณแน่ใจหรือไม่?</p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" id="confirmCancel">ยกเลิก</button>
+                <button class="btn-danger" id="confirmOk">ยืนยัน</button>
+            </div>
         </div>
     </div>
 
