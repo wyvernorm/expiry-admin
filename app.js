@@ -1,12 +1,11 @@
 const WORKER_URL = "https://expiry-worker.iplusview.workers.dev";
 
 let editingServiceId = null;
-let currentCustomerId = null;
-let currentCustomer = null;
 let selectedItems = new Set();
 let draggedEvent = null;
 let currentUser = null;
 let allCustomers = [];
+let allServices = [];
 
 // ==================== GOOGLE AUTH ====================
 
@@ -19,7 +18,7 @@ function initGoogleAuth() {
 
     script.onload = () => {
         google.accounts.id.initialize({
-            client_id: '962763961858-59vepdnpla1p46dsrh4hecpr0np57flu.apps.googleusercontent.com',
+            client_id: '962763961858-p66svnijg3f1o0ssp5k7jt68c9b0fgev.apps.googleusercontent.com',
             callback: handleGoogleLogin
         });
 
@@ -141,10 +140,15 @@ class ExpiryManager {
     }
 
     async init() {
-        await loadCustomers();
+        await loadAllData();
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
         this.setupTouchGestures();
+        
+        // Auto refresh every 30 seconds
+        setInterval(() => {
+            loadAllData();
+        }, 30000);
     }
 
     setupEventListeners() {
@@ -223,23 +227,6 @@ class ExpiryManager {
 
         document.getElementById('filterStatus').addEventListener('change', () => this.renderList());
 
-        document.getElementById('customerSelected').addEventListener('click', () => {
-            document.getElementById('customerDropdown').classList.toggle('hidden');
-        });
-
-        document.getElementById('refreshCustomer').addEventListener('click', async () => {
-            if (!currentCustomer) return;
-            showLoading();
-            await fetch(`${WORKER_URL}/api/customers/refresh`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ customer_id: currentCustomer.id })
-            });
-            await loadCustomers();
-            hideLoading();
-            showToast('รีเฟรชสำเร็จ', 'success');
-        });
-
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') this.closeModal();
         });
@@ -309,7 +296,6 @@ class ExpiryManager {
         const modal = document.getElementById('modal');
         const form = document.getElementById('itemForm');
 
-        // Populate LINE user selector with ALL customers
         this.populateLineUserSelect();
 
         if (service) {
@@ -334,7 +320,6 @@ class ExpiryManager {
         const select = document.getElementById('lineUserId');
         select.innerHTML = '<option value="">-- เลือกผู้รับแจ้งเตือน --</option>';
         
-        // แสดงทุกคน ไม่จำกัดเฉพาะลูกค้าปัจจุบัน
         allCustomers.forEach(c => {
             const option = document.createElement('option');
             option.value = c.line_user_id;
@@ -388,7 +373,7 @@ class ExpiryManager {
             });
 
             this.closeModal();
-            await loadServices();
+            await loadAllData();
             hideLoading();
             showToast(editingServiceId ? 'แก้ไขสำเร็จ' : 'เพิ่มสำเร็จ', 'success');
         } catch (error) {
@@ -408,7 +393,7 @@ class ExpiryManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ deleted_by: currentUser ? currentUser.email : 'unknown' })
             });
-            await loadServices();
+            await loadAllData();
             hideLoading();
             showToast('ลบสำเร็จ', 'success');
         } catch (error) {
@@ -428,7 +413,7 @@ class ExpiryManager {
                 });
             }
             selectedItems.clear();
-            await loadServices();
+            await loadAllData();
             hideLoading();
             showToast(`ลบ ${ids.length} รายการสำเร็จ`, 'success');
             document.getElementById('bulkDeleteBtn').style.display = 'none';
@@ -456,7 +441,7 @@ class ExpiryManager {
                     updated_by: currentUser ? currentUser.email : 'unknown'
                 })
             });
-            await loadServices();
+            await loadAllData();
             hideLoading();
             showToast('ย้ายสำเร็จ', 'success');
         } catch (error) {
@@ -746,70 +731,31 @@ class ExpiryManager {
 
 // ==================== LOAD DATA ====================
 
-async function loadCustomers() {
+async function loadAllData() {
     try {
         showLoading();
-        const res = await fetch(`${WORKER_URL}/api/customers`);
-        const customers = await res.json();
-        allCustomers = customers;
-
-        const dropdown = document.getElementById('customerDropdown');
-        const selected = document.getElementById('customerSelected');
-        dropdown.innerHTML = '';
-
-        if (customers.length === 0) {
-            selected.innerHTML = '<div class="empty-state-small">ยังไม่มีลูกค้า</div>';
-            hideLoading();
-            return;
-        }
-
-        customers.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'customer-item';
-            div.innerHTML = `
-                <img src="${c.picture_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}`}">
-                <div class="customer-info">
-                    <strong>${c.name}</strong>
-                </div>
-            `;
-
-            div.onclick = () => {
-                currentCustomer = c;
-                currentCustomerId = c.id;
-                selected.innerHTML = div.innerHTML;
-                dropdown.classList.add('hidden');
-                loadServices();
-            };
-
-            dropdown.appendChild(div);
-        });
-
-        if (customers.length && !currentCustomerId) {
-            dropdown.firstChild.click();
-        }
+        
+        // Load customers
+        const customersRes = await fetch(`${WORKER_URL}/api/customers`);
+        allCustomers = await customersRes.json();
+        
+        // Load ALL services from ALL customers
+        const allServicesPromises = allCustomers.map(c => 
+            fetch(`${WORKER_URL}/api/services?customer_id=${c.id}`).then(r => r.json())
+        );
+        
+        const servicesArrays = await Promise.all(allServicesPromises);
+        allServices = servicesArrays.flat();
+        
+        manager.services = allServices;
+        manager.renderCalendar();
+        manager.renderList();
+        manager.updateStats();
         
         hideLoading();
     } catch (error) {
         hideLoading();
-        showToast('เกิดข้อผิดพลาดในการโหลดลูกค้า', 'error');
-    }
-}
-
-async function loadServices() {
-    if (!currentCustomerId) return;
-
-    try {
-        showLoading();
-        const res = await fetch(`${WORKER_URL}/api/services?customer_id=${currentCustomerId}`);
-        const services = await res.json();
-        manager.services = services;
-        manager.renderCalendar();
-        manager.renderList();
-        manager.updateStats();
-        hideLoading();
-    } catch (error) {
-        hideLoading();
-        showToast('เกิดข้อผิดพลาดในการโหลดบริการ', 'error');
+        showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
     }
 }
 
